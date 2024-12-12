@@ -1,6 +1,8 @@
 import requests
 import json
 
+# Code from https://github.com/greghesp/ha-bambulab/issues/673#issuecomment-2455955428
+
 # Prompt the user for their Bambu Lab username and password
 bambuUsername = input("Enter your Bambu Lab username: ")
 bambuPassword = input("Enter your Bambu Lab password: ")

@@ -23,6 +23,7 @@ def publish(client, msg):
   print(f"Failed to send message to topic device/{PRINTER_ID}/request")
   return False
 
+# Inspired by https://github.com/Donkie/Spoolman/issues/217#issuecomment-2303022970
 def on_message(client, userdata, msg):
   global LAST_AMS_CONFIG
   # TODO: Consume spool
