@@ -48,6 +48,5 @@ TBD:
  - Filament spending based on printing
  - Evidently needed GUI improvements
  - Code cleanup
- - Deployment as Helm chart
  - Video showcase
  - TODOs
