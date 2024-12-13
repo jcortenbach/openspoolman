@@ -1,8 +1,0 @@
-BASE_URL = "" # Where will this app be accessible
-PRINTER_ID = ""  # Printer serial number - Run init_bambulab.py
-PRINTER_CODE = ""       # Printer access code - Run init_bambulab.py
-PRINTER_IP = ""      # Printer local IP address - Check wireless on printer
-SPOOLMAN_PROTO = ""
-SPOOLMAN_IP = ""     # Spoolman IP address
-SPOOLMAN_PORT = "" # Spoolman port
-SPOOLMAN_API_URL = f"{SPOOLMAN_PROTO}://{SPOOLMAN_IP}:{SPOOLMAN_PORT}/api/v1"
