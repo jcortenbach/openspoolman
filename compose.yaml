@@ -1,0 +1,6 @@
+services:
+  openspoolman:
+    build: .
+    env_file: "config.env"
+    ports:
+      - "8000:8000"

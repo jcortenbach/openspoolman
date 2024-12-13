@@ -9,6 +9,9 @@ from config import PRINTER_ID, PRINTER_CODE, PRINTER_IP
 from messages import GET_VERSION, PUSH_ALL
 from spoolman_client import fetchSpoolList, patchExtraTags
 
+MQTT_CLIENT = {}  # Global variable storing MQTT Client
+LAST_AMS_CONFIG = {}  # Global variable storing last AMS configuration
+
 
 def num2letter(num):
   return chr(ord("A") + int(num))
@@ -31,7 +34,7 @@ def on_message(client, userdata, msg):
   # TODO: Consume spool
   try:
     data = json.loads(msg.payload.decode())
-    #print(data)
+    # print(data)
     if "print" in data and "vt_tray" in data["print"]:
       print(data)
       LAST_AMS_CONFIG["vt_tray"] = data["print"]["vt_tray"]
@@ -82,7 +85,8 @@ def setActiveTray(spool_id, spool_extra, ams_id, tray_id):
   if spool_extra == None:
     spool_extra = {}
 
-  if not spool_extra.get("active_tray") or spool_extra.get("active_tray") != json.dumps(f"{PRINTER_ID}_{ams_id}_{tray_id}"):
+  if not spool_extra.get("active_tray") or spool_extra.get("active_tray") != json.dumps(
+      f"{PRINTER_ID}_{ams_id}_{tray_id}"):
     patchExtraTags(spool_id, spool_extra, {
       "active_tray": json.dumps(f"{PRINTER_ID}_{ams_id}_{tray_id}"),
     })
@@ -133,6 +137,4 @@ def getMqttClient():
   return MQTT_CLIENT
 
 
-MQTT_CLIENT = {}  # Global variable storing MQTT Client
-LAST_AMS_CONFIG = {}  # Global variable storing last AMS configuration
 SPOOLS = fetchSpools()  # Global variable storing latest spool from spoolman
