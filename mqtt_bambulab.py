@@ -31,7 +31,7 @@ def on_message(client, userdata, msg):
   # TODO: Consume spool
   try:
     data = json.loads(msg.payload.decode())
-    print(data)
+    #print(data)
     if "print" in data and "vt_tray" in data["print"]:
       print(data)
       LAST_AMS_CONFIG["vt_tray"] = data["print"]["vt_tray"]
@@ -79,15 +79,21 @@ def on_connect(client, userdata, flags, rc):
 
 
 def setActiveTray(spool_id, spool_extra, ams_id, tray_id):
-  patchExtraTags(spool_id, spool_extra, {
-    "active_tray": json.dumps(f"{PRINTER_ID}_{ams_id}_{tray_id}"),
-  })
+  if spool_extra == None:
+    spool_extra = {}
 
-  # Remove active tray from inactive spools
-  for old_spool in SPOOLS:
-    if spool_id != old_spool["id"] and old_spool["extra"]["active_tray"] == json.dumps(
-        f"{PRINTER_ID}_{ams_id}_{tray_id}"):
-      patchExtraTags(old_spool["id"], old_spool["extra"], {"active_tray": json.dumps("")})
+  if not spool_extra.get("active_tray") or spool_extra.get("active_tray") != json.dumps(f"{PRINTER_ID}_{ams_id}_{tray_id}"):
+    patchExtraTags(spool_id, spool_extra, {
+      "active_tray": json.dumps(f"{PRINTER_ID}_{ams_id}_{tray_id}"),
+    })
+
+    # Remove active tray from inactive spools
+    for old_spool in SPOOLS:
+      if spool_id != old_spool["id"] and old_spool["extra"]["active_tray"] == json.dumps(
+          f"{PRINTER_ID}_{ams_id}_{tray_id}"):
+        patchExtraTags(old_spool["id"], old_spool["extra"], {"active_tray": json.dumps("")})
+  else:
+    print("Skipping set active tray")
 
 
 # Fetch spools from spoolman

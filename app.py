@@ -1,4 +1,5 @@
 import json
+import traceback
 import uuid
 
 from flask import Flask, request, render_template_string
@@ -120,6 +121,7 @@ def tray_load():
         <p>Updated Spool ID {spool_id} with TAG id {tag_id} to AMS {ams_id}, Tray {tray_id}.</p>
         """
   except Exception as e:
+    traceback.print_exc()
     return f"<h1>Error</h1><p>{str(e)}</p>"
 
 
@@ -162,11 +164,12 @@ def home():
       <ul>
       """
     for spool in spools:
-      if not spool.get("extra", {}).get("tag"):
+      if not spool.get("extra", {}).get("tag") or spool.get("extra", {}).get("tag") == json.dumps(""):
         html += f"<li><a href='/assign_tag?spool_id={spool.get('id')}'>Spool {spool.get('filament').get('vendor').get('name')} - {spool.get('filament').get('name')}</a></li>"
     html += "</ul>"
     return html
   except Exception as e:
+    traceback.print_exc()
     return f"<h1>Error</h1><p>{str(e)}</p>"
 
 
@@ -189,12 +192,13 @@ def assign_tag():
         <script type="text/javascript">
         function writeNFC(){{
           const ndef = new NDEFReader();
+          document.getElementById("message").textContent="Bring NFC Tag closer to the phone.";
           ndef.write({{
             records: [{{ recordType: "url", data: "{BASE_URL}/spool_info?tag_id={myuuid}" }}],
           }}).then(() => {{
-            alert("Message written.");
+            document.getElementById("message").textContent="Message written.";
           }}).catch(error => {{
-            alert(`Write failed :-( try again: ${{error}}.`);
+            document.getElementById("message").textContent="Write failed :-( try again: " + error + ".";
           }}); 
         }};
         </script>
@@ -202,6 +206,7 @@ def assign_tag():
         <body>
         NFC Write
         <button id="write" onclick="writeNFC()">Write</button>
+        <h1 id="message"></h1>
         </body>
         </html>
         """
