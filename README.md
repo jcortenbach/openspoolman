@@ -40,11 +40,14 @@ How to setup:
  - On the website pick the slot you put your filament in
  - Done
 
+Notes:
+ - If you change the BASE_URL of this app, you will need to reconfigure all NFC TAGS
+
 TBD:
  - Filament remaining in AMS (I have only AMS lite, if you have AMS we can test together)
  - Filament spending based on printing
  - Evidently needed GUI improvements
  - Code cleanup
  - Deployment as Docker and Helm chart
- - Easy configuration via env properties
  - Video showcase
+ - TODOs

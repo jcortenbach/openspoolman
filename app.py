@@ -1,15 +1,16 @@
 import json
 import uuid
 
-import requests
 from flask import Flask, request, render_template_string
 
-from config import BASE_URL, PRINTER_ID, SPOOLMAN_API_URL
+from config import BASE_URL
 from filament import generate_filament_brand_code, generate_filament_temperatures
 from messages import AMS_FILAMENT_SETTING
-from mqtt_bambulab import fetchSpools, getLastAMSConfig, publish, getMqttClient
+from mqtt_bambulab import fetchSpools, getLastAMSConfig, publish, getMqttClient, setActiveTray
+from spoolman_client import patchExtraTags, getSpoolById
 
 app = Flask(__name__)
+
 
 @app.route("/spool_info")
 def spool_info():
@@ -68,6 +69,7 @@ def spool_info():
 
   return render_template_string(html)
 
+
 @app.route("/tray_load")
 def tray_load():
   tag_id = request.args.get("tag_id")
@@ -80,25 +82,15 @@ def tray_load():
 
   try:
     # Update Spoolman with the selected tray
-    response = requests.patch(f"{SPOOLMAN_API_URL}/spool/{spool_id}", json={
-      "extra": {
-        "tag": json.dumps(tag_id),
-        "active_tray": json.dumps(f"{PRINTER_ID}_{ams_id}_{tray_id}"),
-      }
-    })
-    print(response.status_code)
-    print(response.text)
+    spool_data = getSpoolById(spool_id)
 
-    response = requests.get(f"{SPOOLMAN_API_URL}/spool/{spool_id}")
-    print(response.status_code)
-    print(response.text)
+    setActiveTray(spool_id, spool_data["extra"], ams_id, tray_id)
 
-    spool_data = json.loads(response.text)
     ams_message = AMS_FILAMENT_SETTING
     ams_message["print"]["sequence_id"] = 0
     ams_message["print"]["ams_id"] = int(ams_id)
     ams_message["print"]["tray_id"] = int(tray_id)
-    ams_message["print"]["tray_color"] = spool_data["filament"]["color_hex"].upper()+"FF"
+    ams_message["print"]["tray_color"] = spool_data["filament"]["color_hex"].upper() + "FF"
 
     if "nozzle_temperature" in spool_data["filament"]["extra"]:
       nozzle_temperature_range = spool_data["filament"]["extra"]["nozzle_temperature"].strip("[]").split(",")
@@ -112,11 +104,12 @@ def tray_load():
 
     ams_message["print"]["tray_type"] = spool_data["filament"]["material"]
     filament_brand_code = generate_filament_brand_code(spool_data["filament"]["material"],
-                                 spool_data["filament"]["vendor"]["name"],
-                                 spool_data["filament"]["extra"].get("type", ""))
+                                                       spool_data["filament"]["vendor"]["name"],
+                                                       spool_data["filament"]["extra"].get("type", ""))
     ams_message["print"]["tray_info_idx"] = filament_brand_code["brand_code"]
 
-    #ams_message["print"]["tray_sub_brands"] = filament_brand_code["sub_brand_code"]
+    # TODO: test sub_brand_code
+    # ams_message["print"]["tray_sub_brands"] = filament_brand_code["sub_brand_code"]
     ams_message["print"]["tray_sub_brands"] = ""
 
     print(ams_message)
@@ -129,10 +122,10 @@ def tray_load():
   except Exception as e:
     return f"<h1>Error</h1><p>{str(e)}</p>"
 
+
 @app.route("/")
 def home():
   try:
-    # Update Spoolman with the selected tray
     spools = fetchSpools()
 
     last_ams_config = getLastAMSConfig()
@@ -176,6 +169,7 @@ def home():
   except Exception as e:
     return f"<h1>Error</h1><p>{str(e)}</p>"
 
+
 @app.route("/assign_tag")
 def assign_tag():
   spool_id = request.args.get("spool_id")
@@ -185,14 +179,9 @@ def assign_tag():
 
   myuuid = str(uuid.uuid4())
 
-  resp = requests.patch(f"{SPOOLMAN_API_URL}/spool/{spool_id}", json={
-    "extra": {
-      "tag": json.dumps(myuuid),
-    }
+  patchExtraTags(spool_id, {}, {
+    "tag": json.dumps(myuuid),
   })
-
-  print(resp.status_code)
-  print(resp.raw)
 
   return f"""
   <html>
@@ -216,6 +205,7 @@ def assign_tag():
         </body>
         </html>
         """
+
 
 @app.route('/', methods=['GET'])
 def health():
