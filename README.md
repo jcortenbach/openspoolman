@@ -7,7 +7,7 @@ Similar functionality to https://github.com/spuder/OpenSpool using only your pho
 
 Everything works locally without cloud access, you can use scripts/init_bambulab.py script to access your PRINTER_ID and PRINTER_CODE if it is not available on your printer.
 
-What you need:
+### What you need:
  - Android Phone with Chrome web browser or iPhone (manual process much more complicated)
  - Server to run OpenSpoolMan with https that is reachable from your Phone and can reach both SpoolMan and Bambu Lab printer on the network
  - Active Bambu Lab Account or PRINTER_ID and PRINTER_CODE on your printer
@@ -15,13 +15,13 @@ What you need:
  - SpoolMan installed https://github.com/Donkie/Spoolman
  - NFC Tags https://eu.store.bambulab.com/en-sk/collections/nfc/products/nfc-tag-with-adhesive https://www.aliexpress.com/item/1005006332360160.html
 
-How to setup:
- - Rename config.template to config.py and: 
-   - set BASE_URL - that is the URL where OpenSpoolMan will be available on your network. Must be https for NFC write to work.
+### How to setup:
+ - Rename config.env.template to config.env or set environment properies and: 
+   - set OPENSPOOLMAN_BASE_URL - that is the URL where OpenSpoolMan will be available on your network. Must be https for NFC write to work. without trailing slash
    - set PRINTER_ID - On your printer clicking on Setting -> Device -> Printer SN
-   - set PRINTER_CODE - On your printer clicking on Setting -> Lan Only Mode -> Access Code (you _don't_ need to enable the LAN Only Mode)
+   - set PRINTER_ACCESS_CODE - On your printer clicking on Setting -> Lan Only Mode -> Access Code (you _don't_ need to enable the LAN Only Mode)
    - set PRINTER_IP - On your printer clicking on Setting -> Lan Only Mode -> IP Address (you _don't_ need to enable the LAN Only Mode)
-   - set SPOOLMAN_PROTO, _IP, _PORT - according to your SpoolMan installation
+   - set SPOOLMAN_BASE_URL - according to your SpoolMan installation without trailing slash
  - Run the server (wsgi.py)
  - Run Spool Man
  - Add following extra Fields to your SpoolMan:
@@ -40,13 +40,21 @@ How to setup:
  - On the website pick the slot you put your filament in
  - Done
 
-Notes:
+### Deployment
+Run locally in venv by configuring environment properties and running wsgi.py, supports adhoc ssl.
+
+Run in docker by configuring config.env and running compose.yaml, you will need more setup/config to run ssl.
+
+Run in kubernetes using helm chart, where you can configure the ingress with SSL. https://github.com/truecharts/public/blob/master/charts/library/common/values.yaml
+
+### Notes:
  - If you change the BASE_URL of this app, you will need to reconfigure all NFC TAGS
 
-TBD:
+### TBD:
  - Filament remaining in AMS (I have only AMS lite, if you have AMS we can test together)
  - Filament spending based on printing
  - Evidently needed GUI improvements
  - Code cleanup
  - Video showcase
+ - Docker compose SSL
  - TODOs
