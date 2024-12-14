@@ -44,7 +44,7 @@ jobs:
       # Step 5: Package the Helm Chart
       - name: Package Helm Chart
         run: |
-          helm package helm/openspoolman --destination ./
+          helm package helm/openspoolman --version=${{ env.VERSION }} --app-version=${{ env.VERSION }} --destination ./
 
       # Step 6: Push the Helm Chart to GHCR
       - name: Push Helm Chart to GHCR

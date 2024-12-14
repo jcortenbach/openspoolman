@@ -48,7 +48,7 @@ Run in docker by configuring config.env and running compose.yaml, you will need 
 
 Run in kubernetes using helm chart, where you can configure the ingress with SSL. https://github.com/truecharts/public/blob/master/charts/library/common/values.yaml
 
-### AUTO SPEND
+### AUTO SPEND - Automatic filament usage based on slicer estimate
 You can turn this feature on to automatically update the spool usage in SpoolMan. 
 This feature is using slicer information about predicted filament weight usage (and in future correlating it with the progress of the printer to compute the estimate of filament used).
 
