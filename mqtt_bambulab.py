@@ -5,13 +5,13 @@ from threading import Thread
 
 import paho.mqtt.client as mqtt
 
-from config import PRINTER_ID, PRINTER_CODE, PRINTER_IP
+from config import PRINTER_ID, PRINTER_CODE, PRINTER_IP, AUTO_SPEND
 from messages import GET_VERSION, PUSH_ALL
-from spoolman_client import fetchSpoolList, patchExtraTags
+from spoolman_client import fetchSpoolList, patchExtraTags, consumeSpool
+from tools_3mf import getFilamentsUsageFrom3mf
 
 MQTT_CLIENT = {}  # Global variable storing MQTT Client
 LAST_AMS_CONFIG = {}  # Global variable storing last AMS configuration
-
 
 def num2letter(num):
   return chr(ord("A") + int(num))
@@ -28,22 +28,45 @@ def publish(client, msg):
   return False
 
 
+
+def spendFilaments(filaments_usage):
+  print(filaments_usage)
+  ams_usage = {}
+  for tray_id, usage in filaments_usage:
+    if tray_id != -1:
+      #TODO: hardcoded ams_id
+      if ams_usage.get(f"{PRINTER_ID}_0_{tray_id}"):
+        ams_usage[f"{PRINTER_ID}_0_{tray_id}"] += float(usage)
+      else:
+        ams_usage[f"{PRINTER_ID}_0_{tray_id}"] = float(usage)
+
+  for spool in fetchSpools():
+    #TODO: What if there is a mismatch between AMS and SpoolMan?
+    if spool.get("extra") and spool.get("extra").get("active_tray") and ams_usage.get(json.loads(spool.get("extra").get("active_tray"))):
+      consumeSpool(spool["id"], ams_usage.get(json.loads(spool.get("extra").get("active_tray"))))
+
 # Inspired by https://github.com/Donkie/Spoolman/issues/217#issuecomment-2303022970
 def on_message(client, userdata, msg):
   global LAST_AMS_CONFIG
-  # TODO: Consume spool
   try:
     data = json.loads(msg.payload.decode())
-    # print(data)
+    #print(data)
+    if AUTO_SPEND:
+      #Prepare AMS spending estimation
+      if "print" in data and "command" in data["print"] and data["print"]["command"] == "project_file" and "url" in data["print"]:
+        expected_filaments_usage = getFilamentsUsageFrom3mf(data["print"]["url"])
+        ams_used = data["print"]["use_ams"]
+        ams_mapping = data["print"]["ams_mapping"]
+        if ams_used:
+          spendFilaments(zip(ams_mapping, expected_filaments_usage))
+
+    #Save external spool tray data
     if "print" in data and "vt_tray" in data["print"]:
-      print(data)
       LAST_AMS_CONFIG["vt_tray"] = data["print"]["vt_tray"]
 
+    #Save ams spool data
     if "print" in data and "ams" in data["print"] and "ams" in data["print"]["ams"]:
-      print(data)
       LAST_AMS_CONFIG["ams"] = data["print"]["ams"]["ams"]
-
-      print(LAST_AMS_CONFIG)
       for ams in data["print"]["ams"]["ams"]:
         print(f"AMS [{num2letter(ams['id'])}] (hum: {ams['humidity']}, temp: {ams['temp']}ºC)")
         for tray in ams["tray"]:

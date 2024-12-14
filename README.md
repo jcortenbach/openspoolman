@@ -22,6 +22,7 @@ Everything works locally without cloud access, you can use scripts/init_bambulab
    - set PRINTER_ACCESS_CODE - On your printer clicking on Setting -> Lan Only Mode -> Access Code (you _don't_ need to enable the LAN Only Mode)
    - set PRINTER_IP - On your printer clicking on Setting -> Lan Only Mode -> IP Address (you _don't_ need to enable the LAN Only Mode)
    - set SPOOLMAN_BASE_URL - according to your SpoolMan installation without trailing slash
+   - set AUTO_SPEND - to True if you want for system to track your filament spending (check AUTO_SPEND issues below) default to False
  - Run the server (wsgi.py)
  - Run Spool Man
  - Add following extra Fields to your SpoolMan:
@@ -47,14 +48,33 @@ Run in docker by configuring config.env and running compose.yaml, you will need 
 
 Run in kubernetes using helm chart, where you can configure the ingress with SSL. https://github.com/truecharts/public/blob/master/charts/library/common/values.yaml
 
+### AUTO SPEND
+You can turn this feature on to automatically update the spool usage in SpoolMan. 
+This feature is using slicer information about predicted filament weight usage (and in future correlating it with the progress of the printer to compute the estimate of filament used).
+
+This feature has currently following issues/drawbacks:
+ - Spending on the start of the print
+ - Not spending according to print process and spending full filament weight even if print fails
+ - Don't know if it works with LAN mode, since it downloads the 3MF file from cloud
+ - Doesn't work if you print from SD card
+ - Not tested with multiple AMS systems
+ - External spool spending not yet implemented
+ - Not handling the mismatch between the SpoolMan and AMS (if you don't have the Active Tray information correct in spoolman it won't work properly)
+
 ### Notes:
  - If you change the BASE_URL of this app, you will need to reconfigure all NFC TAGS
 
 ### TBD:
  - Filament remaining in AMS (I have only AMS lite, if you have AMS we can test together)
  - Filament spending based on printing
+   - TODO: handle situation when the print doesn't finish
+   - TODO: what about locally run file?
+   - TODO: test with multiple AMS
+   - TODO: filament usage in external spool
  - Evidently needed GUI improvements
  - Code cleanup
  - Video showcase
  - Docker compose SSL
+ - Logs
  - TODOs
+ - Bambu Spools have apparently two RFID chips with two distinct UIDs so if you swap the filament to different tray it may fail, needs rework/testing

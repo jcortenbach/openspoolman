@@ -25,3 +25,10 @@ def fetchSpoolList():
   print(response.status_code)
   print(response.text)
   return response.json()
+
+def consumeSpool(spool_id, use_weight):
+  response = requests.put(f"{SPOOLMAN_API_URL}/spool/{spool_id}/use", json={
+    "use_weight": use_weight
+  })
+  print(response.status_code)
+  print(response.text)
