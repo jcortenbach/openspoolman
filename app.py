@@ -4,7 +4,7 @@ import uuid
 
 from flask import Flask, request, render_template, redirect, url_for
 
-from config import BASE_URL, AUTO_SPEND
+from config import BASE_URL, AUTO_SPEND, SPOOLMAN_BASE_URL
 from filament import generate_filament_brand_code, generate_filament_temperatures
 from frontend_utils import color_is_dark
 from messages import AMS_FILAMENT_SETTING
@@ -13,6 +13,10 @@ from spoolman_client import patchExtraTags, getSpoolById
 from spoolman_service import augmentTrayDataWithSpoolMan, trayUid
 
 app = Flask(__name__)
+
+@app.context_processor
+def fronted_utilities():
+  return dict(SPOOLMAN_BASE_URL=SPOOLMAN_BASE_URL, AUTO_SPEND=AUTO_SPEND, color_is_dark=color_is_dark, BASE_URL=BASE_URL)
 
 @app.route("/spool_info")
 def spool_info():
@@ -40,7 +44,7 @@ def spool_info():
       current_spool = spool
 
     # TODO: missing current_spool
-    return render_template('spool_info.html', tag_id=tag_id, current_spool=current_spool, ams_data=ams_data, vt_tray_data=vt_tray_data, color_is_dark=color_is_dark, AUTO_SPEND=AUTO_SPEND)
+    return render_template('spool_info.html', tag_id=tag_id, current_spool=current_spool, ams_data=ams_data, vt_tray_data=vt_tray_data)
   except Exception as e:
     traceback.print_exc()
     return render_template('error.html', exception=str(e))
@@ -116,7 +120,7 @@ def home():
         augmentTrayDataWithSpoolMan(spool_list, tray, trayUid(ams["id"], tray["id"]))
         issue |= tray["issue"]
 
-    return render_template('index.html', success_message=success_message, ams_data=ams_data, vt_tray_data=vt_tray_data, color_is_dark=color_is_dark, AUTO_SPEND=AUTO_SPEND, issue=issue)
+    return render_template('index.html', success_message=success_message, ams_data=ams_data, vt_tray_data=vt_tray_data, issue=issue)
   except Exception as e:
     traceback.print_exc()
     return render_template('error.html', exception=str(e))
@@ -144,7 +148,7 @@ def write_tag():
     patchExtraTags(spool_id, {}, {
       "tag": json.dumps(myuuid),
     })
-    return render_template('write_tag.html', myuuid=myuuid, BASE_URL=BASE_URL)
+    return render_template('write_tag.html', myuuid=myuuid)
   except Exception as e:
     traceback.print_exc()
     return render_template('error.html', exception=str(e))
