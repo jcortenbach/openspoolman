@@ -14,7 +14,7 @@
 <!-- Spool List -->
 <div class="list-group">
   {% for spool in spools %}
-  {% if not spool.extra.get("tag") or spool.extra.get("tag") == "null" %}
+  {% if not spool.extra.get("tag") or spool.extra.get("tag") == "\"\"" %}
   <!-- Individual Spool Item -->
   <a href="{{ url_for('write_tag', spool_id=spool.id) }}"
      class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
@@ -42,7 +42,7 @@
   {% endif %}
   {% endfor %}
   {% for spool in spools %}
-  {% if spool.extra.get("tag") %}
+  {% if spool.extra.get("tag") and spool.extra.get("tag") != "\"\"" %}
   <!-- Individual Spool Item -->
   <a href="{{ url_for('write_tag', spool_id=spool.id) }}"
      class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">

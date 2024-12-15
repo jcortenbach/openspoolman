@@ -1,4 +1,4 @@
-# OpenSpoolMan
+# <img alt="logo" src="static/logo.png" height="36" /> OpenSpoolMan 
 Use any filament like Bambu filaments with automatic recognition and filament usage updates in your AMS!
 
 No need for cloud or any special hardware, just your phone and some NFC tags!
@@ -6,6 +6,42 @@ No need for cloud or any special hardware, just your phone and some NFC tags!
 Similar functionality to https://github.com/spuder/OpenSpool using only your phone, server and NFC tags integrated with SpoolMan
 
 Everything works locally without cloud access, you can use scripts/init_bambulab.py script to access your PRINTER_ID and PRINTER_CODE if it is not available on your printer.
+
+### Main features
+
+<table>
+    <tbody>
+        <tr>
+            <td><b>Information about your AMS</b></td>
+            <td><b>Assign NFC tags to your spools in SpoolMan</b></td>
+            <td><b>Write the URL of the Spool detail to NFC tag directly from the browser</b></td>
+        </tr>
+        <tr>
+            <td><img alt="Information about your AMS" src="docs/img/info.jpeg" width="250"/></td>
+            <td><img alt="Assign NFC tags to your spools in SpoolMan" src="docs/img/assign_nfc.jpeg" width="250"/></td>
+            <td><img alt="NFC write success" src="docs/img/nfc_write_success.jpeg" width="250"/></td>
+        </tr>
+        <tr>
+            <td colspan="2"><b>Bring Phone close to the NFC tag and open the spool detail</b></td>
+            <td><b>Pick the AMS slot where you want the spool to be loaded</b></td>
+        </tr>
+        <tr>
+            <td><img alt="Open NFC link" src="docs/img/open_link.jpeg" width="250"/></td>
+            <td><img alt="Spool info" src="docs/img/spool_info.jpeg" width="250"/></td>
+            <td><img alt="Pick tray" src="docs/img/pick_tray.jpeg" width="250"/></td>
+        </tr>
+        <tr>
+            <td><b>Automatically track the usage of your filaments based on the slicer estimates in SpoolMan</b></td>
+            <td><b>Track Bambu filaments without additional NFC Tags</b></td>
+            <td><b>Resolve issues with few clicks (soon)</b></td>
+        </tr>
+        <tr>
+            <td><img alt="Slicer estimate" src="docs/img/slicer_estimate.jpg" width="250"/></td>
+            <td><img alt="Bambu filament usgae tracking" src="docs/img/bambu_tracking.jpg" width="250"/></td>
+            <td><img alt="Resolve issues" src="docs/img/resolve_issues.jpeg" width="250"/></td>
+        </tr>
+    </tbody>
+</table>
 
 ### What you need:
  - Android Phone with Chrome web browser or iPhone (manual process much more complicated)
@@ -79,3 +115,5 @@ This feature has currently following issues/drawbacks:
  - Click to resolve issue
  - More template components / less copy&paste
  - Better Tray naming
+ - Reduce the amount of files in docker container
+ - Cloud service for controlled redirect so you don't have to reconfigure NFC tags
