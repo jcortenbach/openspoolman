@@ -2,73 +2,48 @@ import json
 import traceback
 import uuid
 
-from flask import Flask, request, render_template_string
+from flask import Flask, request, render_template, redirect, url_for
 
-from config import BASE_URL
+from config import BASE_URL, AUTO_SPEND
 from filament import generate_filament_brand_code, generate_filament_temperatures
+from frontend_utils import color_is_dark
 from messages import AMS_FILAMENT_SETTING
 from mqtt_bambulab import fetchSpools, getLastAMSConfig, publish, getMqttClient, setActiveTray
 from spoolman_client import patchExtraTags, getSpoolById
+from spoolman_service import augmentTrayDataWithSpoolMan, trayUid
 
 app = Flask(__name__)
 
-
 @app.route("/spool_info")
 def spool_info():
-  tag_id = request.args.get("tag_id")
+  try:
+    tag_id = request.args.get("tag_id")
 
-  last_ams_config = getLastAMSConfig()
-  ams_data = last_ams_config.get("ams", [])
-  vt_tray_data = last_ams_config.get("vt_tray", {})
+    last_ams_config = getLastAMSConfig()
+    ams_data = last_ams_config.get("ams", [])
+    vt_tray_data = last_ams_config.get("vt_tray", {})
 
-  print(ams_data)
-  print(vt_tray_data)
+    print(ams_data)
+    print(vt_tray_data)
 
-  if not tag_id:
-    return "TAG ID is required as a query parameter (e.g., ?tagid=RFID123)"
+    if not tag_id:
+      return "TAG ID is required as a query parameter (e.g., ?tagid=RFID123)"
 
-  spools = fetchSpools()
-  current_spool = None
-  for spool in spools:
-    if not spool.get("extra", {}).get("tag"):
-      continue
-    tag = json.loads(spool["extra"]["tag"])
-    if tag != tag_id:
-      continue
-    current_spool = spool
+    spools = fetchSpools()
+    current_spool = None
+    for spool in spools:
+      if not spool.get("extra", {}).get("tag"):
+        continue
+      tag = json.loads(spool["extra"]["tag"])
+      if tag != tag_id:
+        continue
+      current_spool = spool
 
-  # Generate HTML for AMS selection
-  html = f"""
-    <h1>Spool information</h1>
-    """
-  if current_spool:
-    html += f"<p>Current Spool: {current_spool}</p>"
-  html += """
-    <h1>AMS</h1>
-    <ul>
-    """
-
-  for ams in ams_data:
-    html += f"<li>AMS {ams['id']} (Humidity: {ams['humidity']}%, Temp: {ams['temp']}°C)<ul>"
-    for tray in ams["tray"]:
-      tray_status = f"[{tray['tray_sub_brands']} {tray['tray_color']}]"
-      html += f"""
-            <li>
-                Tray {tray['id']} {tray_status} - Remaining: {tray['remain']}%
-                <a href="/tray_load?spool_id={current_spool['id']}&tag_id={tag_id}&ams={ams['id']}&tray={tray['id']}">Pick this tray</a>
-            </li>
-            """
-    html += "</ul></li>"
-  html += "</ul>"
-  html += f"""
-            <h1>External Spool</h1>
-            <ul>
-              <li>Tray {vt_tray_data['id']} [{vt_tray_data['tray_sub_brands']} {vt_tray_data['tray_color']}] - Remaining: {vt_tray_data['remain']}%
-                <a href="/tray_load?spool_id={current_spool['id']}&tag_id={tag_id}&ams={vt_tray_data['id']}&tray=255">Pick this tray</a></li>
-            </ul>
-          """
-
-  return render_template_string(html)
+    # TODO: missing current_spool
+    return render_template('spool_info.html', tag_id=tag_id, current_spool=current_spool, ams_data=ams_data, vt_tray_data=vt_tray_data, color_is_dark=color_is_dark, AUTO_SPEND=AUTO_SPEND)
+  except Exception as e:
+    traceback.print_exc()
+    return render_template('error.html', exception=str(e))
 
 
 @app.route("/tray_load")
@@ -116,101 +91,63 @@ def tray_load():
     print(ams_message)
     publish(getMqttClient(), ams_message)
 
-    return f"""
-        <h1>Success</h1>
-        <p>Updated Spool ID {spool_id} with TAG id {tag_id} to AMS {ams_id}, Tray {tray_id}.</p>
-        """
+    return redirect(url_for('home', success_message=f"Updated Spool ID {spool_id} with TAG id {tag_id} to AMS {ams_id}, Tray {tray_id}."))
   except Exception as e:
     traceback.print_exc()
-    return f"<h1>Error</h1><p>{str(e)}</p>"
+    return render_template('error.html', exception=str(e))
 
 
 @app.route("/")
 def home():
   try:
-    spools = fetchSpools()
-
     last_ams_config = getLastAMSConfig()
     ams_data = last_ams_config.get("ams", [])
     vt_tray_data = last_ams_config.get("vt_tray", {})
+    spool_list = fetchSpools()
+    success_message = request.args.get("success_message")
 
-    html = """
-      <h1>Current AMS Configuration</h1>
-      """
-    html += """
-    <h1>AMS</h1>
-    <ul>
-    """
+    issue = False
+    #TODO: recheck tray ID and external spool ID and extract it to constant
+    augmentTrayDataWithSpoolMan(spool_list, vt_tray_data, trayUid(vt_tray_data["id"], 255))
+    issue |= vt_tray_data["issue"]
 
     for ams in ams_data:
-      html += f"<li>AMS {ams['id']} (Humidity: {ams['humidity']}%, Temp: {ams['temp']}°C)<ul>"
       for tray in ams["tray"]:
-        tray_status = f"[{tray['tray_sub_brands']} {tray['tray_color']}]"
-        html += f"""
-              <li>
-                  Tray {tray['id']} {tray_status} - Remaining: {tray['remain']}%
-              </li>
-              """
-      html += "</ul></li>"
-    html += "</ul>"
-    html += f"""
-              <h1>External Spool</h1>
-              <ul>
-                <li>Tray {vt_tray_data['id']} [{vt_tray_data['tray_sub_brands']} {vt_tray_data['tray_color']}] - Remaining: {vt_tray_data['remain']}%</li>
-              </ul>
-            """
-    html += """  
-      <h1>Add new TAG</h1>
-      <ul>
-      """
-    for spool in spools:
-      if not spool.get("extra", {}).get("tag") or spool.get("extra", {}).get("tag") == json.dumps(""):
-        html += f"<li><a href='/assign_tag?spool_id={spool.get('id')}'>Spool {spool.get('filament').get('vendor').get('name')} - {spool.get('filament').get('name')}</a></li>"
-    html += "</ul>"
-    return html
+        augmentTrayDataWithSpoolMan(spool_list, tray, trayUid(ams["id"], tray["id"]))
+        issue |= tray["issue"]
+
+    return render_template('index.html', success_message=success_message, ams_data=ams_data, vt_tray_data=vt_tray_data, color_is_dark=color_is_dark, AUTO_SPEND=AUTO_SPEND, issue=issue)
   except Exception as e:
     traceback.print_exc()
-    return f"<h1>Error</h1><p>{str(e)}</p>"
-
+    return render_template('error.html', exception=str(e))
 
 @app.route("/assign_tag")
 def assign_tag():
-  spool_id = request.args.get("spool_id")
+  try:
+    spools = fetchSpools()
 
-  if not spool_id:
-    return "spool ID is required as a query parameter (e.g., ?spool_id=1)"
+    return render_template('assign_tag.html', spools=spools)
+  except Exception as e:
+    traceback.print_exc()
+    return render_template('error.html', exception=str(e))
 
-  myuuid = str(uuid.uuid4())
+@app.route("/write_tag")
+def write_tag():
+  try:
+    spool_id = request.args.get("spool_id")
 
-  patchExtraTags(spool_id, {}, {
-    "tag": json.dumps(myuuid),
-  })
+    if not spool_id:
+      return "spool ID is required as a query parameter (e.g., ?spool_id=1)"
 
-  return f"""
-  <html>
-  <header>
-        <script type="text/javascript">
-        function writeNFC(){{
-          const ndef = new NDEFReader();
-          document.getElementById("message").textContent="Bring NFC Tag closer to the phone.";
-          ndef.write({{
-            records: [{{ recordType: "url", data: "{BASE_URL}/spool_info?tag_id={myuuid}" }}],
-          }}).then(() => {{
-            document.getElementById("message").textContent="Message written.";
-          }}).catch(error => {{
-            document.getElementById("message").textContent="Write failed :-( try again: " + error + ".";
-          }}); 
-        }};
-        </script>
-        </header>
-        <body>
-        NFC Write
-        <button id="write" onclick="writeNFC()">Write</button>
-        <h1 id="message"></h1>
-        </body>
-        </html>
-        """
+    myuuid = str(uuid.uuid4())
 
+    patchExtraTags(spool_id, {}, {
+      "tag": json.dumps(myuuid),
+    })
+    return render_template('write_tag.html', myuuid=myuuid, BASE_URL=BASE_URL)
+  except Exception as e:
+    traceback.print_exc()
+    return render_template('error.html', exception=str(e))
 
 @app.route('/', methods=['GET'])
 def health():

@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1 class="mb-4">Info</h1>
+{% if issue %}
+<div class="card border-warning shadow-sm mb-4">
+  <div class="card-header bg-warning text-dark fw-bold">
+    Warning
+  </div>
+  <div class="card-body">
+    <h5 class="card-title">There is a mismatch between printer and SpoolMan</h5>
+    <p class="card-text">TODO: To fix the issue click on the tray with the red exclamation mark <i class="bi bi-exclamation-circle text-danger me-2"></i></p>
+  </div>
+</div>
+{% endif %}
+<!-- AMS and External Spool Row -->
+<div class="row">
+  <!-- External Spool -->
+  <div class="col-md-2 mb-4">
+    <div class="card shadow-sm">
+      <div class="card-header">
+        <h5 class="mb-0">External Spool</h5>
+      </div>
+      <div class="card-body text-center">
+        <!-- Tray ID -->
+        <h6 class="text-uppercase mb-1">
+          {% if vt_tray_data.issue %}
+          <i class="bi bi-exclamation-circle text-danger me-2"></i>
+          {% endif %}
+          {% if not vt_tray_data.tray_type %}
+          Empty
+          {% endif %}
+          Tray {{ vt_tray_data.id }}
+        </h6>
+
+        <!-- Tray Sub-Brand and Type -->
+        <div class="small text-muted mb-2">
+          {{ vt_tray_data.tray_type }}
+          {% if vt_tray_data.tray_sub_brands %}
+          <br/>
+          {{ vt_tray_data.tray_sub_brands }}
+          {% endif %}
+        </div>
+
+        <!-- Badge with Dynamic Colors -->
+        <span class="badge d-inline-block p-2"
+              style="background-color: #{{ vt_tray_data.tray_color }};
+                     color: {% if color_is_dark(vt_tray_data.tray_color) %}#FFFFFF{% else %}#000000{% endif %}">
+                        #{{ vt_tray_data.tray_color | upper }}
+                    </span>
+
+        <!-- Remaining Percentage -->
+        <div class="mt-2">
+          Remaining:
+          {% if AUTO_SPEND and vt_tray_data.matched %}
+          <span class="fw-bold">{{ vt_tray_data.remaining_weight|round }}g</span>
+          {% else %}
+          <span class="fw-bold">{{ vt_tray_data.remain }}%</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% for ams in ams_data %}
+  <div class="col-md-4 mb-4">
+    <div class="card shadow-sm">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">AMS {{ ams.id }}</h5>
+        <span class="text-muted small">Humidity: {{ ams.humidity }}%, Temp: {{ ams.temp }}°C</span>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          {% for tray in ams.tray %}
+          <div class="col-6 mb-3">
+            <div class="border rounded p-2 text-center">
+              <!-- Tray ID -->
+              <h6 class="text-uppercase mb-1">
+                {% if tray.issue %}
+                <i class="bi bi-exclamation-circle text-danger me-2"></i>
+                {% endif %}
+                {% if not tray.tray_type %}
+                Empty
+                {% endif %}
+                Tray {{ tray.id }}
+              </h6>
+
+              <!-- Tray Sub-Brand and Type -->
+              <div class="small text-muted mb-2">
+                {{ tray.tray_type }}
+                {% if tray.tray_sub_brands %}
+                <br/>
+                {{ tray.tray_sub_brands }}
+                {% endif %}
+              </div>
+
+              {% if tray.tray_color %}
+              <!-- Badge with Dynamic Colors -->
+              <span class="badge d-inline-block p-2"
+                    style="background-color: #{{ tray.tray_color }};
+                     color: {% if color_is_dark(tray.tray_color) %}#FFFFFF{% else %}#000000{% endif %}">
+                                    #{{ tray.tray_color | upper }}
+                                </span>
+              {% endif %}
+
+              <!-- Remaining Percentage -->
+              <div class="mt-2">
+                Remaining:
+                {% if AUTO_SPEND and tray.matched %}
+                  <span class="fw-bold">{{ tray.remaining_weight|round }}g</span>
+                {% else %}
+                  <span class="fw-bold">{{ tray.remain }}%</span>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Instruction Section -->
+<div class="card shadow-sm mb-4">
+  <div class="card-body">
+    <h5 class="card-title mb-3">
+      <i class="bi bi-info-circle text-info me-2"></i> Instructions
+    </h5>
+    <ul class="list-unstyled">
+      <li>Assign NFC Tags to your spools
+      </li>
+      <li>Load the spool with NFC tag to your AMS and bring your phone close to the NFC tag, open the URL.</li>
+      <li>Choose the tray you just put the spool in.</li>
+    </ul>
+  </div>
+</div>
+{% endblock %}

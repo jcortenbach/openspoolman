@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1 class="mb-4">Spool Info</h1>
+<div class="card mb-3 shadow-sm">
+  <div class="card-header fw-bold">
+    Spool Details
+  </div>
+  <div class="card-body">
+    <!-- Filament Color Badge and Name -->
+    <div class="d-flex align-items-start mb-3">
+      <div class="me-3">
+                <span class="badge d-inline-block"
+                      style="background-color: #{{ current_spool.filament.color_hex }}; width: 40px; height: 40px; border-radius: 5px;">
+                </span>
+      </div>
+      <div>
+        <h5 class="card-title mb-0">{{ current_spool.filament.name }} - {{ current_spool.filament.material }}</h5>
+        <small class="text-muted">{{ current_spool.filament.vendor.name }}</small>
+      </div>
+    </div>
+
+    <!-- Filament Details -->
+    <div class="row mb-2">
+      <div class="col-6">
+        <p class="mb-1"><strong>Remaining Weight:</strong> {{ current_spool.remaining_weight|round(2) }}g</p>
+        <p class="mb-1"><strong>Remaining Length:</strong> {{ current_spool.remaining_length|round(0) }}mm</p>
+      </div>
+      <div class="col-6">
+        <p class="mb-1"><strong>Nozzle Temp:</strong> {{ current_spool.filament.extra.nozzle_temperature }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="card-footer text-muted">
+    <small>Registered: {{ current_spool.registered }} | Last Used: {{ current_spool.last_used }}</small>
+  </div>
+</div>
+<h1 class="mb-4">Pick Tray</h1>
+<!-- AMS and External Spool Row -->
+<div class="row">
+  <!-- External Spool -->
+  <div class="col-md-2 mb-4">
+    <div class="card shadow-sm">
+      <div class="card-header">
+        <h5 class="mb-0">External Spool</h5>
+      </div>
+      <div class="card-body text-center">
+        <div class="card">
+          <!-- Tray ID -->
+          <div class="card-header d-flex justify-content-between align-items-center">
+            {% if vt_tray_data.issue %}
+            <i class="bi bi-exclamation-circle text-danger me-2"></i>
+            {% endif %}
+            {% if not vt_tray_data.tray_type %}
+            Empty
+            {% endif %}
+            Tray {{ vt_tray_data.id }}
+          </div>
+
+          <div class="card-body">
+            <!-- Tray Sub-Brand and Type -->
+            <div class="small text-muted mb-2">
+              {{ vt_tray_data.tray_type }}
+              {% if vt_tray_data.tray_sub_brands %}
+              <br/>
+              {{ vt_tray_data.tray_sub_brands }}
+              {% endif %}
+            </div>
+
+            <!-- Badge with Dynamic Colors -->
+            <span class="badge d-inline-block p-2"
+                  style="background-color: #{{ vt_tray_data.tray_color }};
+                     color: {% if color_is_dark(vt_tray_data.tray_color) %}#FFFFFF{% else %}#000000{% endif %}">
+                        #{{ vt_tray_data.tray_color | upper }}
+                    </span>
+
+          </div>
+          <div class="card-footer">
+            <a class="btn btn-primary"
+               href="{{ url_for('tray_load', spool_id=current_spool['id'], tag_id=tag_id,ams=vt_tray_data['id'], tray='255') }}">Pick
+              this tray</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% for ams in ams_data %}
+  <div class="col-md-4 mb-4">
+    <div class="card shadow-sm">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">AMS {{ ams.id }}</h5>
+        <span class="text-muted small">Humidity: {{ ams.humidity }}%, Temp: {{ ams.temp }}°C</span>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          {% for tray in ams.tray %}
+          <div class="col-6 mb-3">
+            <div class="card">
+              <!-- Tray ID -->
+              <div class="card-header d-flex justify-content-between align-items-center">
+                {% if tray.issue %}
+                <i class="bi bi-exclamation-circle text-danger me-2"></i>
+                {% endif %}
+                {% if not tray.tray_type %}
+                Empty
+                {% endif %}
+                Tray {{ tray.id }}
+              </div>
+              <div class="card-body">
+                <!-- Tray Sub-Brand and Type -->
+                <div class="small text-muted mb-2">
+                  {{ tray.tray_type }}
+                  {% if tray.tray_sub_brands %}
+                  <br/>
+                  {{ tray.tray_sub_brands }}
+                  {% endif %}
+                </div>
+
+                {% if tray.tray_color %}
+                <!-- Badge with Dynamic Colors -->
+                <span class="badge d-inline-block p-2"
+                      style="background-color: #{{ tray.tray_color }};
+                     color: {% if color_is_dark(tray.tray_color) %}#FFFFFF{% else %}#000000{% endif %}">
+                                    #{{ tray.tray_color | upper }}
+                                </span>
+                {% endif %}
+
+              </div>
+              <div class="card-footer">
+                <a class="btn btn-primary"
+                   href="{{ url_for('tray_load', spool_id=current_spool['id'], tag_id=tag_id,ams=ams['id'], tray=tray['id']) }}">Pick
+                  this tray</a>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% endblock %}

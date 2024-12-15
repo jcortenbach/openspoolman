@@ -7,11 +7,12 @@ import paho.mqtt.client as mqtt
 
 from config import PRINTER_ID, PRINTER_CODE, PRINTER_IP, AUTO_SPEND
 from messages import GET_VERSION, PUSH_ALL
-from spoolman_client import fetchSpoolList, patchExtraTags, consumeSpool
+from spoolman_service import spendFilaments, setActiveTray, fetchSpools
 from tools_3mf import getFilamentsUsageFrom3mf
 
 MQTT_CLIENT = {}  # Global variable storing MQTT Client
 LAST_AMS_CONFIG = {}  # Global variable storing last AMS configuration
+
 
 def num2letter(num):
   return chr(ord("A") + int(num))
@@ -28,23 +29,6 @@ def publish(client, msg):
   return False
 
 
-
-def spendFilaments(filaments_usage):
-  print(filaments_usage)
-  ams_usage = {}
-  for tray_id, usage in filaments_usage:
-    if tray_id != -1:
-      #TODO: hardcoded ams_id
-      if ams_usage.get(f"{PRINTER_ID}_0_{tray_id}"):
-        ams_usage[f"{PRINTER_ID}_0_{tray_id}"] += float(usage)
-      else:
-        ams_usage[f"{PRINTER_ID}_0_{tray_id}"] = float(usage)
-
-  for spool in fetchSpools():
-    #TODO: What if there is a mismatch between AMS and SpoolMan?
-    if spool.get("extra") and spool.get("extra").get("active_tray") and ams_usage.get(json.loads(spool.get("extra").get("active_tray"))):
-      consumeSpool(spool["id"], ams_usage.get(json.loads(spool.get("extra").get("active_tray"))))
-
 # Inspired by https://github.com/Donkie/Spoolman/issues/217#issuecomment-2303022970
 def on_message(client, userdata, msg):
   global LAST_AMS_CONFIG
@@ -52,19 +36,20 @@ def on_message(client, userdata, msg):
     data = json.loads(msg.payload.decode())
     #print(data)
     if AUTO_SPEND:
-      #Prepare AMS spending estimation
-      if "print" in data and "command" in data["print"] and data["print"]["command"] == "project_file" and "url" in data["print"]:
+      # Prepare AMS spending estimation
+      if "print" in data and "command" in data["print"] and data["print"]["command"] == "project_file" and "url" in \
+          data["print"]:
         expected_filaments_usage = getFilamentsUsageFrom3mf(data["print"]["url"])
         ams_used = data["print"]["use_ams"]
         ams_mapping = data["print"]["ams_mapping"]
         if ams_used:
           spendFilaments(zip(ams_mapping, expected_filaments_usage))
 
-    #Save external spool tray data
+    # Save external spool tray data
     if "print" in data and "vt_tray" in data["print"]:
       LAST_AMS_CONFIG["vt_tray"] = data["print"]["vt_tray"]
 
-    #Save ams spool data
+    # Save ams spool data
     if "print" in data and "ams" in data["print"] and "ams" in data["print"]["ams"]:
       LAST_AMS_CONFIG["ams"] = data["print"]["ams"]["ams"]
       for ams in data["print"]["ams"]["ams"]:
@@ -72,14 +57,14 @@ def on_message(client, userdata, msg):
         for tray in ams["tray"]:
           if "tray_sub_brands" in tray:
             print(
-                f"    - [{num2letter(ams['id'])}{tray['id']}] {tray['tray_sub_brands']} {tray['tray_color']} ({str(tray['remain']).zfill(3)}%) [[ {tray['tag_uid']} ]]")
+                f"    - [{num2letter(ams['id'])}{tray['id']}] {tray['tray_sub_brands']} {tray['tray_color']} ({str(tray['remain']).zfill(3)}%) [[ {tray['tray_uuid']} ]]")
 
             found = False
-            for spool in SPOOLS:
+            for spool in fetchSpools(True):
               if not spool.get("extra", {}).get("tag"):
                 continue
               tag = json.loads(spool["extra"]["tag"])
-              if tag != tray["tag_uid"]:
+              if tag != tray["tray_uuid"]:
                 continue
 
               found = True
@@ -102,33 +87,6 @@ def on_connect(client, userdata, flags, rc):
   client.subscribe(f"device/{PRINTER_ID}/report")
   publish(client, GET_VERSION)
   publish(client, PUSH_ALL)
-
-
-def setActiveTray(spool_id, spool_extra, ams_id, tray_id):
-  if spool_extra == None:
-    spool_extra = {}
-
-  if not spool_extra.get("active_tray") or spool_extra.get("active_tray") != json.dumps(
-      f"{PRINTER_ID}_{ams_id}_{tray_id}"):
-    patchExtraTags(spool_id, spool_extra, {
-      "active_tray": json.dumps(f"{PRINTER_ID}_{ams_id}_{tray_id}"),
-    })
-
-    # Remove active tray from inactive spools
-    for old_spool in SPOOLS:
-      if spool_id != old_spool["id"] and old_spool["extra"]["active_tray"] == json.dumps(
-          f"{PRINTER_ID}_{ams_id}_{tray_id}"):
-        patchExtraTags(old_spool["id"], old_spool["extra"], {"active_tray": json.dumps("")})
-  else:
-    print("Skipping set active tray")
-
-
-# Fetch spools from spoolman
-def fetchSpools():
-  global SPOOLS
-  SPOOLS = fetchSpoolList()
-  return SPOOLS
-
 
 def async_subscribe():
   global MQTT_CLIENT
@@ -158,6 +116,3 @@ def getLastAMSConfig():
 def getMqttClient():
   global MQTT_CLIENT
   return MQTT_CLIENT
-
-
-SPOOLS = fetchSpools()  # Global variable storing latest spool from spoolman

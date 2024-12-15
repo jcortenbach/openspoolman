@@ -71,10 +71,11 @@ This feature has currently following issues/drawbacks:
    - TODO: what about locally run file?
    - TODO: test with multiple AMS
    - TODO: filament usage in external spool
- - Evidently needed GUI improvements
  - Code cleanup
  - Video showcase
  - Docker compose SSL
  - Logs
  - TODOs
- - Bambu Spools have apparently two RFID chips with two distinct UIDs so if you swap the filament to different tray it may fail, needs rework/testing
+ - Click to resolve issue
+ - More template components / less copy&paste
+ - Better Tray naming
