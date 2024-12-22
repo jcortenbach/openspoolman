@@ -1,0 +1,57 @@
+<div class="card">
+  <!-- Tray ID -->
+  <div class="card-header d-flex justify-content-between align-items-center">
+    {% if tray_data.issue %}
+    <i class="bi bi-exclamation-circle text-danger me-2"></i>
+    {% endif %}
+    {% if not tray_data.tray_type %}
+    Empty
+    {% endif %}
+    Tray {{ tray_data.id }}
+  </div>
+
+  <div class="card-body">
+    <!-- Tray Sub-Brand and Type -->
+    <div class="small text-muted mb-2">
+      {{ tray_data.tray_type }}
+      {% if tray_data.tray_sub_brands %}
+      <br/>
+      {{ tray_data.tray_sub_brands }}
+      {% endif %}
+    </div>
+
+    <!-- Badge with Dynamic Colors -->
+    <span class="badge d-inline-block p-2"
+          style="background-color: #{{ tray_data.tray_color }};
+                     color: {% if color_is_dark(tray_data.tray_color) %}#FFFFFF{% else %}#000000{% endif %}">
+                        #{{ tray_data.tray_color | upper }}
+                    </span>
+
+    <!-- Remaining Percentage -->
+    <div class="mt-2">
+      Remaining:
+      {% if AUTO_SPEND and tray_data.matched %}
+      <span class="fw-bold">{{ tray_data.remaining_weight|round }}g</span>
+      {% else %}
+      <span class="fw-bold">{{ tray_data.remain }}%</span>
+      {% endif %}
+    </div>
+  </div>
+  <div class="card-footer">
+    {% if pick_tray %}
+    <a class="btn btn-primary"
+       href="{{ url_for('tray_load', spool_id=current_spool['id'], tag_id=tag_id, ams=ams_id, tray=tray_id) }}">Pick
+      this tray</a>
+    {% endif %}
+    {% if tray_data.issue %}
+    <a class="btn btn-primary"
+       href="{{ url_for('issue', ams=ams_id, tray=tray_id) }}">Fix
+      this tray</a>
+    {% endif %}
+    {% if not pick_tray and not tray_data.tray_type %}
+    <a class="btn btn-primary"
+       href="{{ url_for('fill', ams=ams_id, tray=tray_id) }}">Fill
+      this tray</a>
+    {% endif %}
+  </div>
+</div>

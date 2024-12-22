@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Fill slot</h1>
+<h2>AMS: {{ ams_id }}, Tray: {{ tray_id }}</h2>
+{% with action_fill=True %}{% include 'fragments/list_spools.html' %}{% endwith %}
+{% endblock %}

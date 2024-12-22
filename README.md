@@ -7,6 +7,9 @@ Similar functionality to https://github.com/spuder/OpenSpool using only your pho
 
 Everything works locally without cloud access, you can use scripts/init_bambulab.py script to access your PRINTER_ID and PRINTER_CODE if it is not available on your printer.
 
+### News
+0.1.3 - 22.12.2024 - Added manual assignment for empty slots
+
 ### Main features
 
 <table>
@@ -113,7 +116,9 @@ This feature has currently following issues/drawbacks:
  - Logs
  - TODOs
  - Click to resolve issue
- - More template components / less copy&paste
  - Better Tray naming
  - Reduce the amount of files in docker container
  - Cloud service for controlled redirect so you don't have to reconfigure NFC tags
+ - Handle printer offline
+ - QR codes
+ - Add search to list of spools
