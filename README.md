@@ -9,6 +9,7 @@ Everything works locally without cloud access, you can use scripts/init_bambulab
 
 ### News
 0.1.3 - 22.12.2024 - Added manual assignment for empty slots
+0.1.4 - 9.2.2025 - Bugfixes, issue fixing WIP
 
 ### Main features
 
@@ -115,7 +116,7 @@ This feature has currently following issues/drawbacks:
  - Docker compose SSL
  - Logs
  - TODOs
- - Click to resolve issue
+ - Click to resolve issue - WIP
  - Better Tray naming
  - Reduce the amount of files in docker container
  - Cloud service for controlled redirect so you don't have to reconfigure NFC tags
