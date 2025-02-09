@@ -22,14 +22,43 @@ def fronted_utilities():
 
 @app.route("/issue")
 def issue():
-  return render_template('issue.html')
+  ams_id = request.args.get("ams")
+  tray_id = request.args.get("tray")
+  if not all([ams_id, tray_id]):
+    return render_template('error.html', exception="Missing AMS ID, or Tray ID.")
+
+  fix_ams = None
+
+  spool_list = fetchSpools()
+  last_ams_config = getLastAMSConfig()
+  if ams_id == EXTERNAL_SPOOL_AMS_ID:
+    fix_ams = last_ams_config.get("vt_tray", {})
+  else:
+    for ams in last_ams_config.get("ams", []):
+      if ams["id"] == ams_id:
+        fix_ams = ams
+        break
+
+  active_spool = None
+  for spool in spool_list:
+    if spool.get("extra") and spool["extra"].get("active_tray") and spool["extra"]["active_tray"] == json.dumps(trayUid(ams_id, tray_id)):
+      active_spool = spool
+      break
+
+  #TODO: Determine issue
+  #New bambulab spool
+  #Tray empty, but spoolman has record
+  #Extra tag mismatch?
+  #COLor/type mismatch
+
+  return render_template('issue.html', fix_ams=fix_ams, active_spool=active_spool)
 
 @app.route("/fill")
 def fill():
   ams_id = request.args.get("ams")
   tray_id = request.args.get("tray")
   if not all([ams_id, tray_id]):
-    return "Missing AMS ID, or Tray ID."
+    return render_template('error.html', exception="Missing AMS ID, or Tray ID.")
 
   spool_id = request.args.get("spool_id")
   if spool_id:
@@ -54,7 +83,7 @@ def spool_info():
     print(vt_tray_data)
 
     if not tag_id:
-      return "TAG ID is required as a query parameter (e.g., ?tagid=RFID123)"
+      return render_template('error.html', exception="TAG ID is required as a query parameter (e.g., ?tagid=RFID123)")
 
     spools = fetchSpools()
     current_spool = None
@@ -81,7 +110,7 @@ def tray_load():
   spool_id = request.args.get("spool_id")
 
   if not all([tag_id, ams_id, tray_id, spool_id]):
-    return "Missing RFID, AMS ID, or Tray ID or spool_id."
+    return render_template('error.html', exception="Missing RFID, AMS ID, or Tray ID or spool_id.")
 
   try:
     # Update Spoolman with the selected tray
@@ -176,7 +205,7 @@ def write_tag():
     spool_id = request.args.get("spool_id")
 
     if not spool_id:
-      return "spool ID is required as a query parameter (e.g., ?spool_id=1)"
+      return render_template('error.html', exception="spool ID is required as a query parameter (e.g., ?spool_id=1)")
 
     myuuid = str(uuid.uuid4())
 

@@ -2,5 +2,7 @@
 
 {% block content %}
 <h1>Solve issue</h1>
-<h2>TBD</h2>
+{% with current_spool=active_spool %} {% include 'fragments/spool_details.html' %} {% endwith %}
+
+
 {% endblock %}
