@@ -3,4 +3,4 @@ services:
     build: .
     env_file: "config.env"
     ports:
-      - "8000:8000"
+      - "2387:8000"
